@@ -55,6 +55,7 @@ Now you can include Fancy File Uploader:
 <script type="text/javascript" src="fancy-file-uploader/jquery.fileupload.js"></script>
 <script type="text/javascript" src="fancy-file-uploader/jquery.iframe-transport.js"></script>
 <script type="text/javascript" src="fancy-file-uploader/jquery.fancy-fileupload.js"></script>
+<script type="text/javascript" src="fancy-file-uploader/fancy_translate-fr.js"></script>
 ```
 
 Let's say you have a file input element somewhere on the same page that looks like:
@@ -123,6 +124,48 @@ Fancy File Uploader works with most server-side languages.  For basic server-sid
 	FancyFileUploaderHelper::HandleUpload("files", $options);
 ?>
 ```
+Ou bien:
+```php
+<?php
+require_once "fancy_file_uploader_helper.php";
+
+if (isset($_REQUEST["action"]) && $_REQUEST["action"] === "fileuploader"){
+	header("Content-Type: application/json");
+	$allowedexts = array(
+		"jpg" => true,
+		"jpeg" => true,
+	);
+	$files = FancyFileUploaderHelper::NormalizeFiles("files");
+	if (!isset($files[0]))  $result = array("success" => false, "error" => "Aucune donnée dans le fichier transmis.", "errorcode" => "bad_input");
+	else if (!$files[0]["success"])  $result = $files[0];
+	else if (!isset($allowedexts[strtolower($files[0]["ext"])])){
+	    $result = array(
+		    "success" => false,
+		    "error" => "Extension de fichier non autorisée.  Doit être '.jpg' or '.jpeg'.",
+		    "errorcode" => "invalid_file_ext"
+	    );
+	} else {
+	    // For chunked file uploads, get the current filename and starting position from the incoming headers.
+	    $name = FancyFileUploaderHelper::GetChunkFilename();
+	    if ($name !== false) {
+		    $startpos = FancyFileUploaderHelper::GetFileStartPosition();
+
+		    // [Do stuff with the file chunk.]
+	    } else {
+		    // [Do stuff with the file here.]
+		    // copy($files[0]["file"], __DIR__ . "/images/" . $id . "." . strtolower($files[0]["ext"]));
+	    }
+	    $result = array(
+		    "success" => true
+	    );
+	}
+	echo json_encode($result, JSON_UNESCAPED_SLASHES);
+	exit();
+}
+
+?>
+```
+
 
 The class also contains `FancyFileUploaderHelper::GetMaxUploadFileSize()`, which determines the maximum allowed file/chunk upload size that PHP allows.
 
